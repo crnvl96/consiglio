@@ -63,10 +63,7 @@ npm install -w api express  # Install a dependency in the api workspace
 ```json
 {
   "files": [],
-  "references": [
-    { "path": "frontend" },
-    { "path": "api" }
-  ]
+  "references": [{ "path": "frontend" }, { "path": "api" }]
 }
 ```
 
