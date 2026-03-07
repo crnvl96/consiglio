@@ -16,9 +16,9 @@ test("renders a numerical input with a maximum value of 8", () => {
   expect(input.getAttribute("max")).toBe("8");
 });
 
-test("input has a label with text 'Slots: '", () => {
+test("input has a label with text 'Slots'", () => {
   render(<Home />);
-  expect(screen.getByLabelText(/slots:/i)).toBeDefined();
+  expect(screen.getByLabelText(/slots/i)).toBeDefined();
 });
 
 test("input is not focusable by tab", async () => {

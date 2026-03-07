@@ -20,7 +20,7 @@ export function NumberStepper({ id, min, max, defaultValue }: NumberStepperProps
   };
 
   return (
-    <div className="flex items-center gap-0">
+    <div className="mx-auto flex w-fit items-center gap-0">
       <Button
         variant="ghost"
         type="button"

@@ -6,6 +6,7 @@
   --color-bg-dark: var(--color-tokyonight-night-bg-dark);
   --color-bg-highlight: var(--color-tokyonight-night-bg-highlight);
   --color-fg: var(--color-tokyonight-night-fg);
+  --color-fg-muted: var(--color-tokyonight-night-dark5);
   --color-accent: var(--color-tokyonight-night-blue);
   --color-accent-bright: var(--color-tokyonight-night-blue-bright);
   --color-border-muted: var(--color-tokyonight-night-blue0);
