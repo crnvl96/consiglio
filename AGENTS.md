@@ -2,21 +2,28 @@
 
 ## Code quality checks
 
-Always run the typecheck, linter, and formatter from the **repository root**:
-
 ```sh
+# Whole repo
 npm run typecheck
 npm run lint
 npm run format
-```
 
-Never `cd` into a workspace directory to run these, the scripts are defined in the root `package.json`.
+# Scoped to a workspace
+npm run frontend:typecheck
+npm run frontend:lint
+npm run frontend:format
+
+npm run api:typecheck
+npm run api:lint
+npm run api:format
+```
 
 ## Design
 
-- Maintain a clean, minimal layout across the entire application.
 - Prioritize composition. Styles should be concentrated in `components/`, `pages/` should compose these components, not define raw styles.
 - Business rules belong in `pages/`.
+- Use the already implemented layouts as reference when building new ones. Match their structure, spacing, and patterns.
+- Use the `frontend-design` skill whenever necessary to think through design decisions.
 
 ## Development workflow
 

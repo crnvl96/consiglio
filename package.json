@@ -11,7 +11,17 @@
     "lint:fix": "oxlint --fix",
     "format": "oxfmt --write .",
     "format:check": "oxfmt --check .",
-    "typecheck": "tsgo --noEmit"
+    "typecheck": "tsgo --noEmit",
+    "frontend:lint": "npm run lint -w frontend",
+    "frontend:lint:fix": "npm run lint:fix -w frontend",
+    "frontend:format": "npm run format -w frontend",
+    "frontend:format:check": "npm run format:check -w frontend",
+    "frontend:typecheck": "npm run typecheck -w frontend",
+    "api:lint": "npm run lint -w api",
+    "api:lint:fix": "npm run lint:fix -w api",
+    "api:format": "npm run format -w api",
+    "api:format:check": "npm run format:check -w api",
+    "api:typecheck": "npm run typecheck -w api"
   },
   "devDependencies": {
     "@typescript/native-preview": "^7.0.0-dev.20260307.1",
