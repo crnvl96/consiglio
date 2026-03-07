@@ -12,7 +12,10 @@
     "composite": true,
     "emitDeclarationOnly": true,
     "declaration": true,
-    "declarationDir": "dist"
+    "declarationDir": "dist",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
   "include": ["src"]
 }

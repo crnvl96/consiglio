@@ -1,6 +1,9 @@
 @import "tailwindcss";
 
 @theme inline {
+  --font-display: "Instrument Serif", serif;
+  --font-body: "Sora", sans-serif;
+
   /* Semantic aliases */
   --color-bg: var(--color-tokyonight-night-bg);
   --color-bg-dark: var(--color-tokyonight-night-bg-dark);
@@ -80,4 +83,35 @@
   --color-tokyonight-night-warning: var(--color-tokyonight-night-yellow);
   --color-tokyonight-night-yellow: oklch(from #e0af68 l c h);
   --color-tokyonight-night-yellow-bright: oklch(from #faba4a l c h);
+
+  --animate-fade-in: fade-in 0.6s ease-out both;
+  --animate-slide-up: slide-up 0.5s ease-out both;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--color-bg);
+  color: var(--color-fg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

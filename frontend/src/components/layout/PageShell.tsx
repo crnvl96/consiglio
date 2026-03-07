@@ -9,11 +9,15 @@ export function PageShell({ children, className }: PageShellProps) {
   return (
     <div
       className={classnames(
-        "flex min-h-screen flex-col items-center justify-center gap-6",
+        "relative flex min-h-screen flex-col items-center justify-center gap-6 overflow-hidden",
         className,
       )}
     >
-      {children}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-150 w-150 rounded-full bg-accent/4 blur-[120px]"
+      />
+      <div className="relative">{children}</div>
     </div>
   );
 }
