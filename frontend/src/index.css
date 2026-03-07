@@ -1,6 +1,16 @@
 @import "tailwindcss";
 
 @theme inline {
+  /* Semantic aliases */
+  --color-bg: var(--color-tokyonight-night-bg);
+  --color-bg-dark: var(--color-tokyonight-night-bg-dark);
+  --color-bg-highlight: var(--color-tokyonight-night-bg-highlight);
+  --color-fg: var(--color-tokyonight-night-fg);
+  --color-accent: var(--color-tokyonight-night-blue);
+  --color-accent-bright: var(--color-tokyonight-night-blue-bright);
+  --color-border-muted: var(--color-tokyonight-night-blue0);
+
+  /* Full palette */
   --color-tokyonight-night-bg: oklch(from #1a1b26 l c h);
   --color-tokyonight-night-bg-dark: oklch(from #16161e l c h);
   --color-tokyonight-night-bg-dark1: oklch(from #0c0e14 l c h);

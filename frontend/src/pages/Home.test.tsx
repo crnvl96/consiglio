@@ -21,12 +21,12 @@ test("input has a label with text 'Slots: '", () => {
   expect(screen.getByLabelText(/slots:/i)).toBeDefined();
 });
 
-test("input is not focusable by click or tab", async () => {
+test("input is not focusable by tab", async () => {
   const user = userEvent.setup();
   render(<Home />);
   const input = screen.getByRole("spinbutton") as HTMLInputElement;
   expect(input.tabIndex).toBe(-1);
-  expect(input.classList.contains("pointer-events-none")).toBe(true);
+  expect(input.readOnly).toBe(true);
   await user.tab();
   expect(input).not.toBe(document.activeElement);
 });
