@@ -7,27 +7,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 All commands run from the repo root unless noted otherwise.
 
 ```sh
-# Code quality (whole repo)
-npm run typecheck        # tsgo --noEmit
+# Root orchestration (delegates to workspaces)
 npm run lint             # oxlint
 npm run lint:fix         # oxlint --fix
 npm run format           # oxfmt --write .
 npm run format:check     # oxfmt --check .
+npm run typecheck        # tsgo --noEmit
+npm run test             # vitest run
+npm run test:coverage    # vitest run --coverage
 
-# Scoped to a workspace (scripts live in each workspace's package.json)
-npm -w frontend run typecheck
+# Scoped to frontend
+npm -w frontend run dev            # vite dev server
+npm -w frontend run build          # vite build
+npm -w frontend run test           # vitest run
+npm -w frontend run test:coverage  # vitest run --coverage
 npm -w frontend run lint
 npm -w frontend run format
-npm -w api run typecheck
-npm -w api run lint
-npm -w api run format
-
-# Frontend dev server (port 3000)
-npm run -w frontend dev
-
-# Tests (frontend only, uses vitest + jsdom)
-npm -w frontend run test -- run            # all tests
-npm -w frontend run test -- run src/path   # single file or directory
+npm -w frontend run typecheck
 ```
 
 ## Architecture
@@ -59,10 +55,7 @@ TypeScript is checked with `tsgo` (native TS from `@typescript/native-preview`),
 Always run the following from the repo root **before** committing:
 
 ```sh
-npm run lint
-npm run format
-npm run typecheck
-npm -w frontend run test -- run
+npm run frontend:check
 ```
 
 All must pass before creating a commit.

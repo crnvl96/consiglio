@@ -7,11 +7,14 @@
     "frontend"
   ],
   "scripts": {
-    "lint": "oxlint",
-    "lint:fix": "oxlint --fix",
-    "format": "oxfmt --write .",
-    "format:check": "oxfmt --check .",
-    "typecheck": "tsgo --noEmit"
+    "frontend:test": "npm -w frontend run test",
+    "frontend:test:coverage": "npm -w frontend run test:coverage",
+    "frontend:lint": "npm -w frontend run lint",
+    "frontend:lint:fix": "npm -w frontend run lint:fix",
+    "frontend:format": "npm -w frontend run format",
+    "frontend:format:check": "npm -w frontend run format:check",
+    "frontend:typecheck": "npm -w frontend run typecheck",
+    "frontend:check": "npm -w frontend run lint:fix && npm -w frontend run format && npm -w frontend run typecheck && npm -w frontend run test:coverage"
   },
   "devDependencies": {
     "@typescript/native-preview": "^7.0.0-dev.20260307.1",
