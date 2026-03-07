@@ -46,13 +46,26 @@ TypeScript is checked with `tsgo` (native TS from `@typescript/native-preview`),
 
 **Routing**: Routes live in `frontend/src/routes/` and are auto-wired via `routeTree.gen.ts` (generated, do not edit). `__root.tsx` defines the root layout. Route files render page components from `frontend/src/pages/`.
 
-**Theme**: Tokyo Night (night variant). Semantic color aliases (`bg`, `fg`, `accent`, `fg-muted`, `border-muted`, etc.) are defined in `index.css` and should be used instead of raw palette colors. Fonts: "Instrument Serif" (display) and "Sora" (body).
+**Theme**: Tokyo Night (night variant). Semantic color aliases (`bg`, `fg`, `accent`, `fg-muted`, `border-muted`, etc.) are defined in `index.css` and should be used instead of raw palette colors. Font: "Berkeley Mono" for both display and body.
 
 **Component structure**:
 
 - `frontend/src/components/ui/` — reusable UI primitives (Button, Card, Label, NumberStepper)
 - `frontend/src/components/layout/` — layout shells and headers (PageShell, PageHeader)
 - `frontend/src/pages/` — page-level components composed from the above
+
+## Pre-commit Checklist
+
+Always run the following from the repo root **before** committing:
+
+```sh
+npm run lint
+npm run format
+npm run typecheck
+npm -w frontend run test -- run
+```
+
+All must pass before creating a commit.
 
 ## Design Principles
 
