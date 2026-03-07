@@ -2,5 +2,23 @@
   "name": "@consiglio/api",
   "version": "1.0.0",
   "private": true,
-  "scripts": {}
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "node --import tsx src/server.ts",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
+    "format": "oxfmt --write .",
+    "format:check": "oxfmt --check .",
+    "typecheck": "tsgo --noEmit"
+  },
+  "dependencies": {
+    "fastify": "^5.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.16.0",
+    "tsx": "^4.21.0"
+  }
 }

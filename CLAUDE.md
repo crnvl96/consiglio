@@ -7,15 +7,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 All commands run from the repo root unless noted otherwise.
 
 ```sh
-# Root orchestration (delegates to workspaces)
-npm run lint             # oxlint
-npm run lint:fix         # oxlint --fix
-npm run format           # oxfmt --write .
-npm run format:check     # oxfmt --check .
-npm run typecheck        # tsgo --noEmit
-npm run test             # vitest run
-npm run test:coverage    # vitest run --coverage
-
 # Scoped to frontend
 npm -w frontend run dev            # vite dev server
 npm -w frontend run build          # vite build
@@ -24,6 +15,15 @@ npm -w frontend run test:coverage  # vitest run --coverage
 npm -w frontend run lint
 npm -w frontend run format
 npm -w frontend run typecheck
+
+# Scoped to api
+npm -w api run dev                 # tsx watch (auto-reload)
+npm -w api run start               # tsx (single run)
+npm -w api run test                # vitest run
+npm -w api run test:coverage       # vitest run --coverage
+npm -w api run lint
+npm -w api run format
+npm -w api run typecheck
 ```
 
 ## Architecture
@@ -31,6 +31,14 @@ npm -w frontend run typecheck
 **Monorepo** using npm workspaces with two packages: `frontend/` (`@consiglio/frontend`) and `api/` (`@consiglio/api`).
 
 TypeScript is checked with `tsgo` (native TS from `@typescript/native-preview`), not `tsc`. The root `tsconfig.json` uses project references to delegate to each workspace.
+
+### API
+
+- **Fastify 5** running on port 3000
+- **tsx** for running TypeScript directly in Node (dev mode uses `watch` for auto-reload)
+- `buildApp()` factory in `api/src/app.ts` constructs the Fastify instance, `api/src/server.ts` is the entry point that listens
+- Tests: Vitest with Fastify's `.inject()` for request testing (no real HTTP needed)
+- Always separate app construction (`buildApp()`) from listening — keeps the app testable
 
 ### Frontend
 
@@ -55,10 +63,10 @@ TypeScript is checked with `tsgo` (native TS from `@typescript/native-preview`),
 Always run the following from the repo root **before** committing:
 
 ```sh
-npm run frontend:check
+npm run frontend:check && npm run api:check
 ```
 
-All must pass before creating a commit.
+Both must pass before creating a commit.
 
 ## Design Principles
 
