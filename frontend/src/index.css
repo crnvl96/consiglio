@@ -1,8 +1,71 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: "Berkeley Mono";
+  font-weight: 100;
+  font-style: normal;
+  src: url("/assets/fonts/Berkeley Mono/BerkeleyMono-Thin.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Berkeley Mono";
+  font-weight: 200;
+  font-style: normal;
+  src: url("/assets/fonts/Berkeley Mono/BerkeleyMono-ExtraLight.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Berkeley Mono";
+  font-weight: 300;
+  font-style: normal;
+  src: url("/assets/fonts/Berkeley Mono/BerkeleyMono-Light.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Berkeley Mono";
+  font-weight: 400;
+  font-style: normal;
+  src: url("/assets/fonts/Berkeley Mono/BerkeleyMono-Regular.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Berkeley Mono";
+  font-weight: 500;
+  font-style: normal;
+  src: url("/assets/fonts/Berkeley Mono/BerkeleyMono-Medium.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Berkeley Mono";
+  font-weight: 600;
+  font-style: normal;
+  src: url("/assets/fonts/Berkeley Mono/BerkeleyMono-SemiBold.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Berkeley Mono";
+  font-weight: 700;
+  font-style: normal;
+  src: url("/assets/fonts/Berkeley Mono/BerkeleyMono-Bold.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Berkeley Mono";
+  font-weight: 800;
+  font-style: normal;
+  src: url("/assets/fonts/Berkeley Mono/BerkeleyMono-ExtraBold.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Berkeley Mono";
+  font-weight: 900;
+  font-style: normal;
+  src: url("/assets/fonts/Berkeley Mono/BerkeleyMono-Black.ttf") format("truetype");
+}
+
 @theme inline {
-  --font-display: "Instrument Serif", serif;
-  --font-body: "Sora", sans-serif;
+  --font-display: "Berkeley Mono", monospace;
+  --font-body: "Berkeley Mono", monospace;
 
   /* Semantic aliases */
   --color-bg: var(--color-tokyonight-night-bg);
