@@ -2,8 +2,5 @@
   "$schema": "https://www.schemastore.org/tsconfig",
   "_version": "24.0.0",
   "files": [],
-  "references": [
-    { "path": "frontend" },
-    { "path": "api" }
-  ]
+  "references": [{ "path": "frontend" }, { "path": "api" }]
 }
