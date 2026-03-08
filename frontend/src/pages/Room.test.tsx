@@ -160,21 +160,6 @@ test("shows 'Copied!' after clicking copy button", async () => {
   expect(await screen.findByText("Copied!")).toBeDefined();
 });
 
-test("hides shareable link when room is locked", async () => {
-  renderWithRouter();
-  await waitFor(() => expect(mockSocket).toBeDefined());
-
-  simulateMessage({ type: "joined", clientId: "c1", slots: 2, connected: 1 });
-  expect(await screen.findByLabelText("Shareable link")).toBeDefined();
-
-  simulateMessage({ type: "locked" });
-
-  await waitFor(() => {
-    expect(screen.queryByLabelText("Shareable link")).toBeNull();
-    expect(screen.queryByText("Copy link")).toBeNull();
-  });
-});
-
 test("renders slot indicators matching the slot count", async () => {
   renderWithRouter();
   await waitFor(() => expect(mockSocket).toBeDefined());
@@ -198,16 +183,4 @@ test("slot indicators reflect connected count", async () => {
     const active = indicators.filter((el) => el.dataset.active === "true");
     expect(active).toHaveLength(2);
   });
-});
-
-test("updates subtitle when room is locked", async () => {
-  renderWithRouter();
-  await waitFor(() => expect(mockSocket).toBeDefined());
-
-  simulateMessage({ type: "joined", clientId: "c1", slots: 2, connected: 1 });
-  expect(screen.getByText("Waiting for players to join...")).toBeDefined();
-
-  simulateMessage({ type: "locked" });
-
-  expect(await screen.findByText("Room is full — link expired")).toBeDefined();
 });

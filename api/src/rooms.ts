@@ -7,7 +7,6 @@ export type Room = {
   token: string;
   clients: Map<string, WebSocket>;
   moderator: { id: string; socket: WebSocket } | null;
-  locked: boolean;
   createdAt: number;
 };
 
@@ -22,7 +21,6 @@ export function createRoom(slots: number): Room {
     token,
     clients: new Map(),
     moderator: null,
-    locked: false,
     createdAt: Date.now(),
   };
   rooms.set(id, room);
@@ -33,16 +31,12 @@ export function getRoom(id: string): Room | undefined {
   return rooms.get(id);
 }
 
-export function lockRoom(room: Room): void {
-  room.locked = true;
-}
-
-export function isRoomLocked(room: Room): boolean {
-  return room.locked || Date.now() - room.createdAt >= 10 * 60 * 1000;
+export function isRoomExpired(room: Room): boolean {
+  return Date.now() - room.createdAt >= 10 * 60 * 1000;
 }
 
 export function addClient(room: Room, clientId: string, socket: WebSocket): boolean {
-  if (isRoomLocked(room) || room.clients.size >= room.slots) return false;
+  if (isRoomExpired(room) || room.clients.size >= room.slots) return false;
   room.clients.set(clientId, socket);
   return true;
 }

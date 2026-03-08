@@ -10,7 +10,7 @@ import { useRoom } from "@/hooks/useRoom";
 export function Room() {
   const { roomId } = useParams({ strict: false });
   const { token } = useSearch({ strict: false });
-  const { status, error, locked, copyShareableUrl } = useRoom(roomId, token);
+  const { status, error, copyShareableUrl } = useRoom(roomId, token);
   const [copied, setCopied] = useState(false);
 
   const shareableUrl = `${window.location.origin}/room/${roomId}`;
@@ -32,12 +32,10 @@ export function Room() {
     );
   }
 
-  const subtitle = locked ? "Room is full — link expired" : "Waiting for players to join...";
-
   return (
     <PageShell>
       <div className="w-full max-w-sm space-y-8 text-center">
-        <PageHeader title="Room" subtitle={subtitle} />
+        <PageHeader title="Room" subtitle="Waiting for players to join..." />
         {status && (
           <>
             <SlotRing slots={status.slots} connected={status.connected} />
@@ -49,7 +47,7 @@ export function Room() {
             </p>
           </>
         )}
-        {status && !locked && (
+        {status && (
           <Card>
             <div className="flex gap-2">
               <input

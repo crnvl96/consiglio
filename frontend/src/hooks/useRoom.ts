@@ -10,14 +10,12 @@ type Role = "moderator" | "player";
 type RoomState = {
   status: RoomStatus | null;
   error: string | null;
-  locked: boolean;
   role: Role | null;
 };
 
 const initialState: RoomState = {
   status: null,
   error: null,
-  locked: false,
   role: null,
 };
 
@@ -55,10 +53,6 @@ export function useRoom(roomId: string | undefined, token?: string) {
           ...prev,
           status: { slots: message.slots, connected: message.connected },
         }));
-      }
-
-      if (message.type === "locked") {
-        setState((prev) => ({ ...prev, locked: true }));
       }
     };
 

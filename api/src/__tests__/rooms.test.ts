@@ -5,8 +5,7 @@ import {
   clearRooms,
   createRoom,
   getRoom,
-  isRoomLocked,
-  lockRoom,
+  isRoomExpired,
   removeClient,
 } from "../rooms.js";
 
@@ -29,11 +28,10 @@ describe("createRoom", () => {
     expect(getRoom(room.id)).toBe(room);
   });
 
-  it("sets locked to false and createdAt timestamp", () => {
+  it("sets createdAt timestamp", () => {
     const before = Date.now();
     const room = createRoom(3);
     const after = Date.now();
-    expect(room.locked).toBe(false);
     expect(room.createdAt).toBeGreaterThanOrEqual(before);
     expect(room.createdAt).toBeLessThanOrEqual(after);
   });
@@ -45,33 +43,19 @@ describe("getRoom", () => {
   });
 });
 
-describe("lockRoom", () => {
-  it("sets locked to true", () => {
+describe("isRoomExpired", () => {
+  it("returns false for a fresh room", () => {
     const room = createRoom(2);
-    lockRoom(room);
-    expect(room.locked).toBe(true);
-  });
-});
-
-describe("isRoomLocked", () => {
-  it("returns true when locked is true", () => {
-    const room = createRoom(2);
-    lockRoom(room);
-    expect(isRoomLocked(room)).toBe(true);
-  });
-
-  it("returns false for a fresh, unlocked room", () => {
-    const room = createRoom(2);
-    expect(isRoomLocked(room)).toBe(false);
+    expect(isRoomExpired(room)).toBe(false);
   });
 
   it("returns true when room is older than 10 minutes", () => {
     vi.useFakeTimers();
     try {
       const room = createRoom(2);
-      expect(isRoomLocked(room)).toBe(false);
+      expect(isRoomExpired(room)).toBe(false);
       vi.advanceTimersByTime(10 * 60 * 1000);
-      expect(isRoomLocked(room)).toBe(true);
+      expect(isRoomExpired(room)).toBe(true);
     } finally {
       vi.useRealTimers();
     }
@@ -92,11 +76,16 @@ describe("addClient", () => {
     expect(room.clients.size).toBe(1);
   });
 
-  it("rejects when room is locked", () => {
-    const room = createRoom(2);
-    lockRoom(room);
-    expect(addClient(room, "client-1", fakeSocket)).toBe(false);
-    expect(room.clients.size).toBe(0);
+  it("rejects when room is expired", () => {
+    vi.useFakeTimers();
+    try {
+      const room = createRoom(2);
+      vi.advanceTimersByTime(10 * 60 * 1000);
+      expect(addClient(room, "client-1", fakeSocket)).toBe(false);
+      expect(room.clients.size).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 

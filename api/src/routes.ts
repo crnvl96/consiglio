@@ -8,8 +8,7 @@ import {
   broadcastToRoom,
   createRoom,
   getRoom,
-  isRoomLocked,
-  lockRoom,
+  isRoomExpired,
   removeClient,
 } from "./rooms.js";
 
@@ -51,7 +50,7 @@ export async function registerRoutes(app: FastifyInstance) {
           return;
         }
 
-        if (isRoomLocked(room)) {
+        if (isRoomExpired(room)) {
           socket.send(JSON.stringify({ type: "error", message: "Room is closed" }));
           socket.close();
           return;
@@ -104,11 +103,6 @@ export async function registerRoutes(app: FastifyInstance) {
           room,
           JSON.stringify({ type: "status", slots: room.slots, connected: room.clients.size }),
         );
-
-        if (room.clients.size === room.slots) {
-          lockRoom(room);
-          broadcastToRoom(room, JSON.stringify({ type: "locked" }));
-        }
 
         socket.on("close", () => {
           removeClient(room, clientId);
