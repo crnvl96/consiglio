@@ -7,7 +7,7 @@ import {
   createRouter,
   RouterProvider,
 } from "@tanstack/react-router";
-import { expect, test } from "vitest";
+import { afterEach, expect, test, vi } from "vitest";
 import { Home } from "./Home";
 
 function renderWithRouter() {
@@ -19,7 +19,7 @@ function renderWithRouter() {
   });
   const roomRoute = createRoute({
     getParentRoute: () => rootRoute,
-    path: "/room",
+    path: "/room/$roomId",
     component: () => <div>Room page</div>,
   });
   const router = createRouter({
@@ -28,6 +28,10 @@ function renderWithRouter() {
   });
   return render(<RouterProvider router={router} />);
 }
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 test("renders a 'Create new room' button", async () => {
   renderWithRouter();
@@ -67,12 +71,50 @@ test("does not allow typing directly into the input", async () => {
   expect(input.value).toBe(valueBefore);
 });
 
-test("navigates to /room when 'Create new room' is clicked", async () => {
+test("calls POST /rooms and navigates to /room/:id on success", async () => {
   const user = userEvent.setup();
+  vi.spyOn(globalThis, "fetch").mockResolvedValue(
+    new Response(JSON.stringify({ id: "abc-123", slots: 1 }), {
+      status: 201,
+      headers: { "Content-Type": "application/json" },
+    }),
+  );
+
   renderWithRouter();
   const button = await screen.findByRole("button", { name: /create new room/i });
   await user.click(button);
+
   await waitFor(() => {
     expect(screen.getByText("Room page")).toBeDefined();
   });
+
+  expect(globalThis.fetch).toHaveBeenCalledWith(
+    "http://localhost:3000/rooms",
+    expect.objectContaining({
+      method: "POST",
+      body: JSON.stringify({ slots: 1 }),
+    }),
+  );
+});
+
+test("shows error when API call fails", async () => {
+  const user = userEvent.setup();
+  vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(null, { status: 500 }));
+
+  renderWithRouter();
+  const button = await screen.findByRole("button", { name: /create new room/i });
+  await user.click(button);
+
+  expect(await screen.findByText("Failed to create room")).toBeDefined();
+});
+
+test("shows error when network fails", async () => {
+  const user = userEvent.setup();
+  vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("Network error"));
+
+  renderWithRouter();
+  const button = await screen.findByRole("button", { name: /create new room/i });
+  await user.click(button);
+
+  expect(await screen.findByText("Could not connect to server")).toBeDefined();
 });

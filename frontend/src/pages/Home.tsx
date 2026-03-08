@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { PageShell } from "@/components/layout/PageShell";
@@ -6,11 +7,33 @@ import { Card } from "@/components/ui/Card";
 import { Label } from "@/components/ui/Label";
 import { NumberStepper } from "@/components/ui/NumberStepper";
 
+const API_BASE = "http://localhost:3000";
+
 export function Home() {
   const navigate = useNavigate();
+  const [error, setError] = useState<string | null>(null);
 
-  const handleCreate = () => {
-    navigate({ to: "/room" });
+  const handleCreate = async () => {
+    const input = document.getElementById("slots") as HTMLInputElement;
+    const slots = Number(input.value);
+
+    try {
+      const response = await fetch(`${API_BASE}/rooms`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slots }),
+      });
+
+      if (!response.ok) {
+        setError("Failed to create room");
+        return;
+      }
+
+      const { id } = await response.json();
+      navigate({ to: "/room/$roomId", params: { roomId: id } });
+    } catch {
+      setError("Could not connect to server");
+    }
   };
 
   return (
@@ -21,6 +44,7 @@ export function Home() {
           <div className="space-y-5">
             <Label htmlFor="slots">Slots</Label>
             <NumberStepper id="slots" min={1} max={8} defaultValue={1} />
+            {error && <p className="text-sm text-red-400">{error}</p>}
             <Button className="w-full" onClick={handleCreate}>
               Create new room
             </Button>

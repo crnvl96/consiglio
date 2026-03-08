@@ -4,6 +4,6 @@ import { Room } from "@/pages/Room";
 
 export const roomRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: "/room",
+  path: "/room/$roomId",
   component: Room,
 });

@@ -15,10 +15,13 @@
     "typecheck": "tsgo --noEmit"
   },
   "dependencies": {
+    "@fastify/cors": "^11.2.0",
+    "@fastify/websocket": "^11.2.0",
     "fastify": "^5.4.0"
   },
   "devDependencies": {
     "@types/node": "^22.16.0",
+    "@types/ws": "^8.18.1",
     "tsx": "^4.21.0"
   }
 }
