@@ -1,6 +1,14 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { WebSocket } from "ws";
-import { addClient, clearRooms, createRoom, getRoom, removeClient } from "../rooms.js";
+import {
+  addClient,
+  clearRooms,
+  createRoom,
+  getRoom,
+  isRoomLocked,
+  lockRoom,
+  removeClient,
+} from "../rooms.js";
 
 const fakeSocket = { readyState: 1, send: () => {} } as unknown as WebSocket;
 
@@ -20,11 +28,53 @@ describe("createRoom", () => {
     const room = createRoom(2);
     expect(getRoom(room.id)).toBe(room);
   });
+
+  it("sets locked to false and createdAt timestamp", () => {
+    const before = Date.now();
+    const room = createRoom(3);
+    const after = Date.now();
+    expect(room.locked).toBe(false);
+    expect(room.createdAt).toBeGreaterThanOrEqual(before);
+    expect(room.createdAt).toBeLessThanOrEqual(after);
+  });
 });
 
 describe("getRoom", () => {
   it("returns undefined for a nonexistent room", () => {
     expect(getRoom("nonexistent")).toBeUndefined();
+  });
+});
+
+describe("lockRoom", () => {
+  it("sets locked to true", () => {
+    const room = createRoom(2);
+    lockRoom(room);
+    expect(room.locked).toBe(true);
+  });
+});
+
+describe("isRoomLocked", () => {
+  it("returns true when locked is true", () => {
+    const room = createRoom(2);
+    lockRoom(room);
+    expect(isRoomLocked(room)).toBe(true);
+  });
+
+  it("returns false for a fresh, unlocked room", () => {
+    const room = createRoom(2);
+    expect(isRoomLocked(room)).toBe(false);
+  });
+
+  it("returns true when room is older than 10 minutes", () => {
+    vi.useFakeTimers();
+    try {
+      const room = createRoom(2);
+      expect(isRoomLocked(room)).toBe(false);
+      vi.advanceTimersByTime(10 * 60 * 1000);
+      expect(isRoomLocked(room)).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 
@@ -40,6 +90,13 @@ describe("addClient", () => {
     addClient(room, "client-1", fakeSocket);
     expect(addClient(room, "client-2", fakeSocket)).toBe(false);
     expect(room.clients.size).toBe(1);
+  });
+
+  it("rejects when room is locked", () => {
+    const room = createRoom(2);
+    lockRoom(room);
+    expect(addClient(room, "client-1", fakeSocket)).toBe(false);
+    expect(room.clients.size).toBe(0);
   });
 });
 

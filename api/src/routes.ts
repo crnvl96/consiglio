@@ -3,7 +3,15 @@ import { createRoomBodySchema, createRoomResponseSchema } from "@consiglio/share
 import type { FastifyInstance } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
-import { addClient, broadcastToRoom, createRoom, getRoom, removeClient } from "./rooms.js";
+import {
+  addClient,
+  broadcastToRoom,
+  createRoom,
+  getRoom,
+  isRoomLocked,
+  lockRoom,
+  removeClient,
+} from "./rooms.js";
 
 const wsParamsSchema = z.object({
   id: z.string(),
@@ -39,6 +47,12 @@ export async function registerRoutes(app: FastifyInstance) {
           return;
         }
 
+        if (isRoomLocked(room)) {
+          socket.send(JSON.stringify({ type: "error", message: "Room is closed" }));
+          socket.close();
+          return;
+        }
+
         const clientId = randomUUID();
         const joined = addClient(room, clientId, socket);
 
@@ -61,6 +75,11 @@ export async function registerRoutes(app: FastifyInstance) {
           room,
           JSON.stringify({ type: "status", slots: room.slots, connected: room.clients.size }),
         );
+
+        if (room.clients.size === room.slots) {
+          lockRoom(room);
+          broadcastToRoom(room, JSON.stringify({ type: "locked" }));
+        }
 
         socket.on("close", () => {
           removeClient(room, clientId);

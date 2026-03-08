@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import WebSocket from "ws";
 import { buildApp } from "../app.js";
-import { clearRooms } from "../rooms.js";
+import { clearRooms, getRoom } from "../rooms.js";
 
 afterEach(() => {
   clearRooms();
@@ -114,7 +114,101 @@ describe("WebSocket /rooms/:id/ws", () => {
     await app.close();
   });
 
-  it("rejects connection when room is full", async () => {
+  it("rejects connection when room is locked", async () => {
+    const app = buildApp();
+    await app.listen({ port: 0 });
+    const port = (app.server.address() as { port: number }).port;
+
+    const createResponse = await app.inject({
+      method: "POST",
+      url: "/rooms",
+      payload: { slots: 1 },
+    });
+    const { id } = createResponse.json();
+
+    const ws1 = new WebSocket(`ws://localhost:${port}/rooms/${id}/ws`);
+    // Wait for ws1 to receive joined + status + locked messages
+    const ws1Messages: unknown[] = [];
+    await new Promise<void>((resolve) => {
+      ws1.on("message", (data: WebSocket.Data) => {
+        const msg = JSON.parse(data.toString());
+        ws1Messages.push(msg);
+        if (msg.type === "locked") resolve();
+      });
+    });
+
+    const ws2 = new WebSocket(`ws://localhost:${port}/rooms/${id}/ws`);
+    const message = await new Promise<string>((resolve) => {
+      ws2.on("message", (data) => resolve(data.toString()));
+    });
+
+    const parsed = JSON.parse(message);
+    expect(parsed.type).toBe("error");
+    expect(parsed.message).toBe("Room is closed");
+
+    ws1.close();
+    ws2.close();
+    await app.close();
+  });
+
+  it("broadcasts locked message when room becomes full", async () => {
+    const app = buildApp();
+    await app.listen({ port: 0 });
+    const port = (app.server.address() as { port: number }).port;
+
+    const createResponse = await app.inject({
+      method: "POST",
+      url: "/rooms",
+      payload: { slots: 2 },
+    });
+    const { id } = createResponse.json();
+
+    const ws1Messages: unknown[] = [];
+    const ws1 = new WebSocket(`ws://localhost:${port}/rooms/${id}/ws`);
+    let ws1Notify: (() => void) | null = null;
+    ws1.on("message", (data: WebSocket.Data) => {
+      ws1Messages.push(JSON.parse(data.toString()));
+      ws1Notify?.();
+    });
+
+    function waitForWs1Count(count: number): Promise<void> {
+      if (ws1Messages.length >= count) return Promise.resolve();
+      return new Promise<void>((resolve) => {
+        ws1Notify = () => {
+          if (ws1Messages.length >= count) {
+            ws1Notify = null;
+            resolve();
+          }
+        };
+      });
+    }
+
+    // ws1 receives: joined, status => 2 messages
+    await waitForWs1Count(2);
+
+    const ws2 = new WebSocket(`ws://localhost:${port}/rooms/${id}/ws`);
+    const ws2Messages: unknown[] = [];
+    await new Promise<void>((resolve) => {
+      ws2.on("message", (data: WebSocket.Data) => {
+        const msg = JSON.parse(data.toString());
+        ws2Messages.push(msg);
+        if (msg.type === "locked") resolve();
+      });
+    });
+
+    // ws1 should also have received status(2) + locked => 4 messages
+    await waitForWs1Count(4);
+
+    // Both clients should have received a locked message
+    expect(ws1Messages.some((m: any) => m.type === "locked")).toBe(true);
+    expect(ws2Messages.some((m: any) => m.type === "locked")).toBe(true);
+
+    ws1.close();
+    ws2.close();
+    await app.close();
+  });
+
+  it("rejects new connections after room was locked even if a client disconnects", async () => {
     const app = buildApp();
     await app.listen({ port: 0 });
     const port = (app.server.address() as { port: number }).port;
@@ -128,7 +222,16 @@ describe("WebSocket /rooms/:id/ws", () => {
 
     const ws1 = new WebSocket(`ws://localhost:${port}/rooms/${id}/ws`);
     await new Promise<void>((resolve) => {
-      ws1.on("message", () => resolve());
+      ws1.on("message", (data: WebSocket.Data) => {
+        const msg = JSON.parse(data.toString());
+        if (msg.type === "locked") resolve();
+      });
+    });
+
+    // Disconnect ws1 — room is now empty but still locked
+    ws1.close();
+    await new Promise<void>((resolve) => {
+      ws1.on("close", () => resolve());
     });
 
     const ws2 = new WebSocket(`ws://localhost:${port}/rooms/${id}/ws`);
@@ -138,10 +241,38 @@ describe("WebSocket /rooms/:id/ws", () => {
 
     const parsed = JSON.parse(message);
     expect(parsed.type).toBe("error");
-    expect(parsed.message).toBe("Room is full");
+    expect(parsed.message).toBe("Room is closed");
 
-    ws1.close();
     ws2.close();
+    await app.close();
+  });
+
+  it("rejects connections to expired rooms", async () => {
+    const app = buildApp();
+    await app.listen({ port: 0 });
+    const port = (app.server.address() as { port: number }).port;
+
+    const createResponse = await app.inject({
+      method: "POST",
+      url: "/rooms",
+      payload: { slots: 3 },
+    });
+    const { id } = createResponse.json();
+
+    // Manually set createdAt to 10 minutes ago to simulate expiry
+    const room = getRoom(id)!;
+    room.createdAt = Date.now() - 10 * 60 * 1000;
+
+    const ws = new WebSocket(`ws://localhost:${port}/rooms/${id}/ws`);
+    const message = await new Promise<string>((resolve) => {
+      ws.on("message", (data) => resolve(data.toString()));
+    });
+
+    const parsed = JSON.parse(message);
+    expect(parsed.type).toBe("error");
+    expect(parsed.message).toBe("Room is closed");
+
+    ws.close();
     await app.close();
   });
 
@@ -153,7 +284,7 @@ describe("WebSocket /rooms/:id/ws", () => {
     const createResponse = await app.inject({
       method: "POST",
       url: "/rooms",
-      payload: { slots: 2 },
+      payload: { slots: 3 },
     });
     const { id } = createResponse.json();
 

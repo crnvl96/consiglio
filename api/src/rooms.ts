@@ -5,13 +5,15 @@ export type Room = {
   id: string;
   slots: number;
   clients: Map<string, WebSocket>;
+  locked: boolean;
+  createdAt: number;
 };
 
 const rooms = new Map<string, Room>();
 
 export function createRoom(slots: number): Room {
   const id = randomUUID();
-  const room: Room = { id, slots, clients: new Map() };
+  const room: Room = { id, slots, clients: new Map(), locked: false, createdAt: Date.now() };
   rooms.set(id, room);
   return room;
 }
@@ -20,8 +22,16 @@ export function getRoom(id: string): Room | undefined {
   return rooms.get(id);
 }
 
+export function lockRoom(room: Room): void {
+  room.locked = true;
+}
+
+export function isRoomLocked(room: Room): boolean {
+  return room.locked || Date.now() - room.createdAt >= 10 * 60 * 1000;
+}
+
 export function addClient(room: Room, clientId: string, socket: WebSocket): boolean {
-  if (room.clients.size >= room.slots) return false;
+  if (isRoomLocked(room) || room.clients.size >= room.slots) return false;
   room.clients.set(clientId, socket);
   return true;
 }

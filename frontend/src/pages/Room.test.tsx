@@ -1,4 +1,5 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import {
   createMemoryHistory,
   createRootRoute,
@@ -115,4 +116,73 @@ test("cleans up WebSocket on unmount", async () => {
 
   unmount();
   expect(mockSocket.close).toHaveBeenCalled();
+});
+
+test("shows shareable link after joining", async () => {
+  renderWithRouter("my-room-123");
+  await waitFor(() => expect(mockSocket).toBeDefined());
+
+  simulateMessage({ type: "joined", clientId: "c1", slots: 5, connected: 1 });
+
+  const input = await screen.findByLabelText("Shareable link");
+  expect(input).toBeDefined();
+  expect((input as HTMLInputElement).value).toContain("/room/my-room-123");
+  expect((input as HTMLInputElement).readOnly).toBe(true);
+});
+
+test("copies link to clipboard when copy button is clicked", async () => {
+  const writeText = vi.fn().mockResolvedValue(undefined);
+  Object.assign(navigator, { clipboard: { writeText } });
+
+  renderWithRouter("my-room-123");
+  await waitFor(() => expect(mockSocket).toBeDefined());
+
+  simulateMessage({ type: "joined", clientId: "c1", slots: 5, connected: 1 });
+
+  const copyButton = await screen.findByText("Copy link");
+  await userEvent.click(copyButton);
+
+  expect(writeText).toHaveBeenCalledWith(expect.stringContaining("/room/my-room-123"));
+});
+
+test("shows 'Copied!' after clicking copy button", async () => {
+  const writeText = vi.fn().mockResolvedValue(undefined);
+  Object.assign(navigator, { clipboard: { writeText } });
+
+  renderWithRouter();
+  await waitFor(() => expect(mockSocket).toBeDefined());
+
+  simulateMessage({ type: "joined", clientId: "c1", slots: 3, connected: 1 });
+
+  const copyButton = await screen.findByText("Copy link");
+  await userEvent.click(copyButton);
+
+  expect(await screen.findByText("Copied!")).toBeDefined();
+});
+
+test("hides shareable link when room is locked", async () => {
+  renderWithRouter();
+  await waitFor(() => expect(mockSocket).toBeDefined());
+
+  simulateMessage({ type: "joined", clientId: "c1", slots: 2, connected: 1 });
+  expect(await screen.findByLabelText("Shareable link")).toBeDefined();
+
+  simulateMessage({ type: "locked" });
+
+  await waitFor(() => {
+    expect(screen.queryByLabelText("Shareable link")).toBeNull();
+    expect(screen.queryByText("Copy link")).toBeNull();
+  });
+});
+
+test("updates subtitle when room is locked", async () => {
+  renderWithRouter();
+  await waitFor(() => expect(mockSocket).toBeDefined());
+
+  simulateMessage({ type: "joined", clientId: "c1", slots: 2, connected: 1 });
+  expect(screen.getByText("Waiting for players to join...")).toBeDefined();
+
+  simulateMessage({ type: "locked" });
+
+  expect(await screen.findByText("Room is full — link expired")).toBeDefined();
 });
