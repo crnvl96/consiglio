@@ -1,5 +1,6 @@
-import { useState } from "react";
+import type { CreateRoomResponse } from "@consiglio/shared";
 import { useNavigate } from "@tanstack/react-router";
+import { useMutation } from "@tanstack/react-query";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { PageShell } from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/Button";
@@ -9,31 +10,40 @@ import { NumberStepper } from "@/components/ui/NumberStepper";
 
 const API_BASE = "http://localhost:3000";
 
+async function createRoom(slots: number): Promise<CreateRoomResponse> {
+  const response = await fetch(`${API_BASE}/rooms`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ slots }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to create room");
+  }
+
+  return response.json();
+}
+
 export function Home() {
   const navigate = useNavigate();
-  const [error, setError] = useState<string | null>(null);
 
-  const handleCreate = async () => {
+  const mutation = useMutation({
+    mutationFn: createRoom,
+    onSuccess: (data) => {
+      navigate({ to: "/room/$roomId", params: { roomId: data.id } });
+    },
+  });
+
+  const error = mutation.error
+    ? mutation.error.message === "Failed to create room"
+      ? "Failed to create room"
+      : "Could not connect to server"
+    : null;
+
+  const handleCreate = () => {
     const input = document.getElementById("slots") as HTMLInputElement;
     const slots = Number(input.value);
-
-    try {
-      const response = await fetch(`${API_BASE}/rooms`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slots }),
-      });
-
-      if (!response.ok) {
-        setError("Failed to create room");
-        return;
-      }
-
-      const { id } = await response.json();
-      navigate({ to: "/room/$roomId", params: { roomId: id } });
-    } catch {
-      setError("Could not connect to server");
-    }
+    mutation.mutate(slots);
   };
 
   return (

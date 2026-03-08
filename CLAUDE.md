@@ -7,6 +7,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 All commands run from the repo root unless noted otherwise.
 
 ```sh
+# Scoped to shared
+npm -w shared run build            # emit declaration files (required before typecheck)
+
 # Scoped to frontend
 npm -w frontend run dev            # vite dev server
 npm -w frontend run build          # vite build
@@ -28,9 +31,15 @@ npm -w api run typecheck
 
 ## Architecture
 
-**Monorepo** using npm workspaces with two packages: `frontend/` (`@consiglio/frontend`) and `api/` (`@consiglio/api`).
+**Monorepo** using npm workspaces with three packages: `shared/` (`@consiglio/shared`), `frontend/` (`@consiglio/frontend`), and `api/` (`@consiglio/api`).
 
 TypeScript is checked with `tsgo` (native TS from `@typescript/native-preview`), not `tsc`. The root `tsconfig.json` uses project references to delegate to each workspace.
+
+### Shared
+
+- `shared/src/index.ts` — Zod schemas and inferred types for API contracts (request/response shapes)
+- Both `api` and `frontend` depend on `@consiglio/shared`
+- Declarations must be built before typechecking consumers: `npm -w shared run build` (already included in `frontend:check` and `api:check` scripts)
 
 ### API
 

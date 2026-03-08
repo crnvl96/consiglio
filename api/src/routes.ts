@@ -1,61 +1,74 @@
 import { randomUUID } from "node:crypto";
+import { createRoomBodySchema, createRoomResponseSchema } from "@consiglio/shared";
 import type { FastifyInstance } from "fastify";
+import type { ZodTypeProvider } from "fastify-type-provider-zod";
+import { z } from "zod";
 import { addClient, broadcastToRoom, createRoom, getRoom, removeClient } from "./rooms.js";
 
-type CreateRoomBody = {
-  slots: number;
-};
+const wsParamsSchema = z.object({
+  id: z.string(),
+});
 
 export async function registerRoutes(app: FastifyInstance) {
-  app.post<{ Body: CreateRoomBody }>("/rooms", async (request, reply) => {
-    const { slots } = request.body;
+  app.withTypeProvider<ZodTypeProvider>().post(
+    "/rooms",
+    {
+      schema: {
+        body: createRoomBodySchema,
+        response: { 201: createRoomResponseSchema },
+      },
+    },
+    async (request, reply) => {
+      const { slots } = request.body;
+      const room = createRoom(slots);
+      return reply.status(201).send({ id: room.id, slots: room.slots });
+    },
+  );
 
-    if (!Number.isInteger(slots) || slots < 1 || slots > 8) {
-      return reply.status(400).send({ error: "slots must be an integer between 1 and 8" });
-    }
+  app
+    .withTypeProvider<ZodTypeProvider>()
+    .get(
+      "/rooms/:id/ws",
+      { websocket: true, schema: { params: wsParamsSchema } },
+      (socket, request) => {
+        const room = getRoom(request.params.id);
 
-    const room = createRoom(slots);
-    return reply.status(201).send({ id: room.id, slots: room.slots });
-  });
+        if (!room) {
+          socket.send(JSON.stringify({ type: "error", message: "Room not found" }));
+          socket.close();
+          return;
+        }
 
-  app.get<{ Params: { id: string } }>("/rooms/:id/ws", { websocket: true }, (socket, request) => {
-    const room = getRoom(request.params.id);
+        const clientId = randomUUID();
+        const joined = addClient(room, clientId, socket);
 
-    if (!room) {
-      socket.send(JSON.stringify({ type: "error", message: "Room not found" }));
-      socket.close();
-      return;
-    }
+        if (!joined) {
+          socket.send(JSON.stringify({ type: "error", message: "Room is full" }));
+          socket.close();
+          return;
+        }
 
-    const clientId = randomUUID();
-    const joined = addClient(room, clientId, socket);
+        socket.send(
+          JSON.stringify({
+            type: "joined",
+            clientId,
+            slots: room.slots,
+            connected: room.clients.size,
+          }),
+        );
 
-    if (!joined) {
-      socket.send(JSON.stringify({ type: "error", message: "Room is full" }));
-      socket.close();
-      return;
-    }
+        broadcastToRoom(
+          room,
+          JSON.stringify({ type: "status", slots: room.slots, connected: room.clients.size }),
+        );
 
-    socket.send(
-      JSON.stringify({
-        type: "joined",
-        clientId,
-        slots: room.slots,
-        connected: room.clients.size,
-      }),
+        socket.on("close", () => {
+          removeClient(room, clientId);
+          broadcastToRoom(
+            room,
+            JSON.stringify({ type: "status", slots: room.slots, connected: room.clients.size }),
+          );
+        });
+      },
     );
-
-    broadcastToRoom(
-      room,
-      JSON.stringify({ type: "status", slots: room.slots, connected: room.clients.size }),
-    );
-
-    socket.on("close", () => {
-      removeClient(room, clientId);
-      broadcastToRoom(
-        room,
-        JSON.stringify({ type: "status", slots: room.slots, connected: room.clients.size }),
-      );
-    });
-  });
 }

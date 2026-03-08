@@ -15,9 +15,12 @@
     "typecheck": "tsgo --noEmit"
   },
   "dependencies": {
+    "@consiglio/shared": "*",
     "@fastify/cors": "^11.2.0",
     "@fastify/websocket": "^11.2.0",
-    "fastify": "^5.4.0"
+    "fastify": "^5.4.0",
+    "fastify-type-provider-zod": "^6.1.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/node": "^22.16.0",

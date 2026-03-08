@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "workspaces": [
+    "shared",
     "api",
     "frontend"
   ],
@@ -14,7 +15,8 @@
     "frontend:format": "npm -w frontend run format",
     "frontend:format:check": "npm -w frontend run format:check",
     "frontend:typecheck": "npm -w frontend run typecheck",
-    "frontend:check": "npm -w frontend run lint:fix && npm -w frontend run format && npm -w frontend run typecheck && npm -w frontend run test:coverage",
+    "shared:build": "npm -w shared run build",
+    "frontend:check": "npm -w shared run build && npm -w frontend run lint:fix && npm -w frontend run format && npm -w frontend run typecheck && npm -w frontend run test:coverage",
     "api:dev": "npm -w api run dev",
     "api:test": "npm -w api run test",
     "api:test:coverage": "npm -w api run test:coverage",
@@ -23,7 +25,7 @@
     "api:format": "npm -w api run format",
     "api:format:check": "npm -w api run format:check",
     "api:typecheck": "npm -w api run typecheck",
-    "api:check": "npm -w api run lint:fix && npm -w api run format && npm -w api run typecheck && npm -w api run test:coverage"
+    "api:check": "npm -w shared run build && npm -w api run lint:fix && npm -w api run format && npm -w api run typecheck && npm -w api run test:coverage"
   },
   "devDependencies": {
     "@typescript/native-preview": "^7.0.0-dev.20260307.1",
