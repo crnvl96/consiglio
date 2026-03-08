@@ -10,7 +10,7 @@ import { useRoom } from "@/hooks/useRoom";
 export function Room() {
   const { roomId } = useParams({ strict: false });
   const { token } = useSearch({ strict: false });
-  const { status, error, copyShareableUrl } = useRoom(roomId, token);
+  const { status, error, role, username, copyShareableUrl } = useRoom(roomId, token);
   const [copied, setCopied] = useState(false);
 
   const shareableUrl = `${window.location.origin}/room/${roomId}`;
@@ -38,7 +38,11 @@ export function Room() {
         <PageHeader title="Room" subtitle="Waiting for players to join..." />
         {status && (
           <>
-            <SlotRing slots={status.slots} connected={status.connected} />
+            <SlotRing
+              slots={status.slots}
+              connected={status.connected}
+              selfIndex={username ? status.players.indexOf(username) : -1}
+            />
             <p className="text-fg-muted text-sm">
               <span className="text-fg font-bold">{status.connected}</span>
               {" / "}
@@ -56,7 +60,7 @@ export function Room() {
             )}
           </>
         )}
-        {status && (
+        {status && role === "moderator" && (
           <Card>
             <div className="flex gap-2">
               <input

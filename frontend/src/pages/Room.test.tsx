@@ -141,13 +141,14 @@ test("cleans up WebSocket on unmount", async () => {
   expect(mockSocket.close).toHaveBeenCalled();
 });
 
-test("shows shareable link after joining", async () => {
+test("shows shareable link for moderator", async () => {
   renderWithRouter("my-room-123");
   await waitFor(() => expect(mockSocket).toBeDefined());
 
   simulateMessage({
     type: "joined",
     clientId: "c1",
+    role: "moderator",
     slots: 5,
     connected: 1,
     players: ["Brave Otter"],
@@ -157,6 +158,24 @@ test("shows shareable link after joining", async () => {
   expect(input).toBeDefined();
   expect((input as HTMLInputElement).value).toContain("/room/my-room-123");
   expect((input as HTMLInputElement).readOnly).toBe(true);
+});
+
+test("hides shareable link for player", async () => {
+  renderWithRouter("my-room-123");
+  await waitFor(() => expect(mockSocket).toBeDefined());
+
+  simulateMessage({
+    type: "joined",
+    clientId: "c1",
+    role: "player",
+    username: "Brave Otter",
+    slots: 5,
+    connected: 1,
+    players: ["Brave Otter"],
+  });
+
+  await screen.findByText(/players connected/);
+  expect(screen.queryByLabelText("Shareable link")).toBeNull();
 });
 
 test("copies link to clipboard when copy button is clicked", async () => {
@@ -169,6 +188,7 @@ test("copies link to clipboard when copy button is clicked", async () => {
   simulateMessage({
     type: "joined",
     clientId: "c1",
+    role: "moderator",
     slots: 5,
     connected: 1,
     players: ["Brave Otter"],
@@ -190,6 +210,7 @@ test("shows 'Copied!' after clicking copy button", async () => {
   simulateMessage({
     type: "joined",
     clientId: "c1",
+    role: "moderator",
     slots: 3,
     connected: 1,
     players: ["Brave Otter"],
