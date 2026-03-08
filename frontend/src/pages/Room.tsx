@@ -45,6 +45,15 @@ export function Room() {
               <span>{status.slots}</span>
               {" players connected"}
             </p>
+            {status.players.length > 0 && (
+              <ul className="space-y-1 text-sm" aria-label="Player list">
+                {status.players.map((name) => (
+                  <li key={name} className="text-fg-muted">
+                    {name}
+                  </li>
+                ))}
+              </ul>
+            )}
           </>
         )}
         {status && (

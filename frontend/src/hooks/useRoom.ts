@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 type RoomStatus = {
   slots: number;
   connected: number;
+  players: string[];
 };
 
 type Role = "moderator" | "player";
@@ -11,12 +12,14 @@ type RoomState = {
   status: RoomStatus | null;
   error: string | null;
   role: Role | null;
+  username: string | null;
 };
 
 const initialState: RoomState = {
   status: null,
   error: null,
   role: null,
+  username: null,
 };
 
 export function useRoom(roomId: string | undefined, token?: string) {
@@ -44,14 +47,23 @@ export function useRoom(roomId: string | undefined, token?: string) {
         setState((prev) => ({
           ...prev,
           role: message.role,
-          status: { slots: message.slots, connected: message.connected },
+          username: message.username ?? null,
+          status: {
+            slots: message.slots,
+            connected: message.connected,
+            players: message.players,
+          },
         }));
       }
 
       if (message.type === "status") {
         setState((prev) => ({
           ...prev,
-          status: { slots: message.slots, connected: message.connected },
+          status: {
+            slots: message.slots,
+            connected: message.connected,
+            players: message.players,
+          },
         }));
       }
     };

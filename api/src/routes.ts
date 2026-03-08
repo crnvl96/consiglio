@@ -7,10 +7,12 @@ import {
   addClient,
   broadcastToRoom,
   createRoom,
+  getPlayerNames,
   getRoom,
   isRoomExpired,
   removeClient,
 } from "./rooms.js";
+import { generateUsername } from "./usernames.js";
 
 const wsParamsSchema = z.object({
   id: z.string(),
@@ -69,6 +71,7 @@ export async function registerRoutes(app: FastifyInstance) {
               role: "moderator",
               slots: room.slots,
               connected: room.clients.size,
+              players: getPlayerNames(room),
             }),
           );
 
@@ -81,7 +84,8 @@ export async function registerRoutes(app: FastifyInstance) {
           return;
         }
 
-        const joined = addClient(room, clientId, socket);
+        const username = generateUsername();
+        const joined = addClient(room, clientId, { socket, username });
 
         if (!joined) {
           socket.send(JSON.stringify({ type: "error", message: "Room is full" }));
@@ -89,26 +93,41 @@ export async function registerRoutes(app: FastifyInstance) {
           return;
         }
 
+        const players = getPlayerNames(room);
+
         socket.send(
           JSON.stringify({
             type: "joined",
             clientId,
             role: "player",
+            username,
             slots: room.slots,
             connected: room.clients.size,
+            players,
           }),
         );
 
         broadcastToRoom(
           room,
-          JSON.stringify({ type: "status", slots: room.slots, connected: room.clients.size }),
+          JSON.stringify({
+            type: "status",
+            slots: room.slots,
+            connected: room.clients.size,
+            players,
+          }),
         );
 
         socket.on("close", () => {
           removeClient(room, clientId);
+          const updatedPlayers = getPlayerNames(room);
           broadcastToRoom(
             room,
-            JSON.stringify({ type: "status", slots: room.slots, connected: room.clients.size }),
+            JSON.stringify({
+              type: "status",
+              slots: room.slots,
+              connected: room.clients.size,
+              players: updatedPlayers,
+            }),
           );
         });
       },

@@ -9,7 +9,10 @@ import {
   removeClient,
 } from "../rooms.js";
 
-const fakeSocket = { readyState: 1, send: () => {} } as unknown as WebSocket;
+const fakeClient = {
+  socket: { readyState: 1, send: () => {} } as unknown as WebSocket,
+  username: "Test User",
+};
 
 afterEach(() => {
   clearRooms();
@@ -65,14 +68,14 @@ describe("isRoomExpired", () => {
 describe("addClient", () => {
   it("adds a client to the room", () => {
     const room = createRoom(2);
-    expect(addClient(room, "client-1", fakeSocket)).toBe(true);
+    expect(addClient(room, "client-1", fakeClient)).toBe(true);
     expect(room.clients.has("client-1")).toBe(true);
   });
 
   it("rejects when room is full", () => {
     const room = createRoom(1);
-    addClient(room, "client-1", fakeSocket);
-    expect(addClient(room, "client-2", fakeSocket)).toBe(false);
+    addClient(room, "client-1", fakeClient);
+    expect(addClient(room, "client-2", fakeClient)).toBe(false);
     expect(room.clients.size).toBe(1);
   });
 
@@ -81,7 +84,7 @@ describe("addClient", () => {
     try {
       const room = createRoom(2);
       vi.advanceTimersByTime(10 * 60 * 1000);
-      expect(addClient(room, "client-1", fakeSocket)).toBe(false);
+      expect(addClient(room, "client-1", fakeClient)).toBe(false);
       expect(room.clients.size).toBe(0);
     } finally {
       vi.useRealTimers();
@@ -92,7 +95,7 @@ describe("addClient", () => {
 describe("removeClient", () => {
   it("removes a client from the room", () => {
     const room = createRoom(2);
-    addClient(room, "client-1", fakeSocket);
+    addClient(room, "client-1", fakeClient);
     removeClient(room, "client-1");
     expect(room.clients.size).toBe(0);
   });

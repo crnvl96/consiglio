@@ -10,7 +10,7 @@ export function SlotRing({ slots, connected }: SlotRingProps) {
 
   return (
     <div className="relative mx-auto" style={{ width: radius * 2 + 40, height: radius * 2 + 40 }}>
-      <ul className="absolute inset-0" role="list">
+      <ul className="absolute inset-0" role="list" aria-label="Slot indicators">
         {Array.from({ length: slots }, (_, i) => {
           const active = i < connected;
           const angle = (2 * Math.PI * i) / slots - Math.PI / 2;
