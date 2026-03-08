@@ -13,7 +13,10 @@ export function NumberStepper({ id, min, max, defaultValue }: NumberStepperProps
 
   const step = (direction: 1 | -1) => {
     const input = inputRef.current;
+    // Defensive: ref is always attached when button click handlers fire
+    /* v8 ignore start */
     if (!input) return;
+    /* v8 ignore end */
     if (direction === 1) input.stepUp();
     else input.stepDown();
     input.dispatchEvent(new Event("input", { bubbles: true }));

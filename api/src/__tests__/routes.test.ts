@@ -188,6 +188,195 @@ describe("WebSocket /rooms/:id/ws", () => {
     await app.close();
   });
 
+  it("connects as moderator when token matches", async () => {
+    const app = buildApp();
+    await app.listen({ port: 0 });
+    const port = (app.server.address() as { port: number }).port;
+
+    const createResponse = await app.inject({
+      method: "POST",
+      url: "/rooms",
+      payload: { slots: 2 },
+    });
+    const { id, token } = createResponse.json();
+
+    const ws = new WebSocket(`ws://localhost:${port}/rooms/${id}/ws?token=${token}`);
+    const message = await new Promise<string>((resolve) => {
+      ws.on("message", (data: WebSocket.Data) => resolve(data.toString()));
+    });
+
+    const parsed = JSON.parse(message);
+    expect(parsed.type).toBe("joined");
+    expect(parsed.role).toBe("moderator");
+    expect(parsed.connected).toBe(0);
+    expect(parsed.players).toEqual([]);
+
+    ws.close();
+    await app.close();
+  });
+
+  it("does not count moderator as a connected player", async () => {
+    const app = buildApp();
+    await app.listen({ port: 0 });
+    const port = (app.server.address() as { port: number }).port;
+
+    const createResponse = await app.inject({
+      method: "POST",
+      url: "/rooms",
+      payload: { slots: 1 },
+    });
+    const { id, token } = createResponse.json();
+
+    // Connect as moderator
+    const wsMod = new WebSocket(`ws://localhost:${port}/rooms/${id}/ws?token=${token}`);
+    await new Promise<void>((resolve) => {
+      wsMod.on("message", () => resolve());
+    });
+
+    // Connect as player — should succeed since moderator doesn't take a slot
+    const wsPlayer = new WebSocket(`ws://localhost:${port}/rooms/${id}/ws`);
+    const message = await new Promise<string>((resolve) => {
+      wsPlayer.on("message", (data: WebSocket.Data) => resolve(data.toString()));
+    });
+
+    const parsed = JSON.parse(message);
+    expect(parsed.type).toBe("joined");
+    expect(parsed.role).toBe("player");
+    expect(parsed.connected).toBe(1);
+    expect(parsed.username).toBeDefined();
+
+    wsPlayer.close();
+    wsMod.close();
+    await app.close();
+  });
+
+  it("broadcasts status to moderator when a player joins", async () => {
+    const app = buildApp();
+    await app.listen({ port: 0 });
+    const port = (app.server.address() as { port: number }).port;
+
+    const createResponse = await app.inject({
+      method: "POST",
+      url: "/rooms",
+      payload: { slots: 2 },
+    });
+    const { id, token } = createResponse.json();
+
+    const modMessages: unknown[] = [];
+    const wsMod = new WebSocket(`ws://localhost:${port}/rooms/${id}/ws?token=${token}`);
+    let modNotify: (() => void) | null = null;
+    wsMod.on("message", (data: WebSocket.Data) => {
+      modMessages.push(JSON.parse(data.toString()));
+      modNotify?.();
+    });
+
+    function waitForModCount(count: number): Promise<void> {
+      if (modMessages.length >= count) return Promise.resolve();
+      return new Promise<void>((resolve) => {
+        modNotify = () => {
+          if (modMessages.length >= count) {
+            modNotify = null;
+            resolve();
+          }
+        };
+      });
+    }
+
+    // Moderator receives: joined => 1 message
+    await waitForModCount(1);
+
+    const wsPlayer = new WebSocket(`ws://localhost:${port}/rooms/${id}/ws`);
+    await new Promise<void>((resolve) => {
+      wsPlayer.on("message", () => resolve());
+    });
+
+    // Moderator should also receive a status broadcast => 2 messages
+    await waitForModCount(2);
+
+    const statusMsg = modMessages[1] as any;
+    expect(statusMsg.type).toBe("status");
+    expect(statusMsg.connected).toBe(1);
+    expect(statusMsg.players).toHaveLength(1);
+
+    wsPlayer.close();
+    wsMod.close();
+    await app.close();
+  });
+
+  it("clears moderator on disconnect", async () => {
+    const app = buildApp();
+    await app.listen({ port: 0 });
+    const port = (app.server.address() as { port: number }).port;
+
+    const createResponse = await app.inject({
+      method: "POST",
+      url: "/rooms",
+      payload: { slots: 2 },
+    });
+    const { id, token } = createResponse.json();
+
+    const wsMod = new WebSocket(`ws://localhost:${port}/rooms/${id}/ws?token=${token}`);
+    await new Promise<void>((resolve) => {
+      wsMod.on("message", () => resolve());
+    });
+
+    const room = getRoom(id)!;
+    expect(room.moderator).not.toBeNull();
+
+    wsMod.close();
+    await new Promise<void>((resolve) => {
+      wsMod.on("close", () => resolve());
+    });
+
+    expect(room.moderator).toBeNull();
+
+    await app.close();
+  });
+
+  it("does not clear new moderator when old moderator disconnects", async () => {
+    const app = buildApp();
+    await app.listen({ port: 0 });
+    const port = (app.server.address() as { port: number }).port;
+
+    const createResponse = await app.inject({
+      method: "POST",
+      url: "/rooms",
+      payload: { slots: 2 },
+    });
+    const { id, token } = createResponse.json();
+
+    // Connect first moderator
+    const wsMod1 = new WebSocket(`ws://localhost:${port}/rooms/${id}/ws?token=${token}`);
+    await new Promise<void>((resolve) => {
+      wsMod1.on("message", () => resolve());
+    });
+
+    const room = getRoom(id)!;
+    expect(room.moderator).not.toBeNull();
+    const mod1Id = room.moderator!.id;
+
+    // Connect second moderator (overwrites the first)
+    const wsMod2 = new WebSocket(`ws://localhost:${port}/rooms/${id}/ws?token=${token}`);
+    await new Promise<void>((resolve) => {
+      wsMod2.on("message", () => resolve());
+    });
+
+    const mod2Id = room.moderator!.id;
+    expect(mod2Id).not.toBe(mod1Id);
+
+    // Disconnect first moderator — should NOT clear room.moderator
+    wsMod1.close();
+    await new Promise<void>((resolve) => {
+      wsMod1.on("close", () => resolve());
+    });
+
+    expect(room.moderator).not.toBeNull();
+    expect(room.moderator!.id).toBe(mod2Id);
+
+    wsMod2.close();
+    await app.close();
+  });
+
   it("rejects connections to expired rooms", async () => {
     const app = buildApp();
     await app.listen({ port: 0 });

@@ -65,10 +65,6 @@ export function broadcastToRoom(room: Room, message: string): void {
   }
 }
 
-export function deleteRoom(id: string): void {
-  rooms.delete(id);
-}
-
 export function clearRooms(): void {
   rooms.clear();
 }

@@ -32,7 +32,7 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-function renderWithRouter(roomId = "test-room-id") {
+function renderWithRouter(roomId = "test-room-id", search = "") {
   const rootRoute = createRootRoute();
   const roomRoute = createRoute({
     getParentRoute: () => rootRoute,
@@ -41,7 +41,7 @@ function renderWithRouter(roomId = "test-room-id") {
   });
   const router = createRouter({
     routeTree: rootRoute.addChildren([roomRoute]),
-    history: createMemoryHistory({ initialEntries: [`/room/${roomId}`] }),
+    history: createMemoryHistory({ initialEntries: [`/room/${roomId}${search}`] }),
   });
   return render(<RouterProvider router={router} />);
 }
@@ -56,6 +56,12 @@ test("connects to the WebSocket with the room ID", async () => {
   renderWithRouter("my-room-123");
   await waitFor(() => expect(mockSocket).toBeDefined());
   expect(mockSocket.url).toContain("/rooms/my-room-123/ws");
+});
+
+test("includes token in WebSocket URL when present", async () => {
+  renderWithRouter("my-room-123", "?token=abc-123");
+  await waitFor(() => expect(mockSocket).toBeDefined());
+  expect(mockSocket.url).toContain("/rooms/my-room-123/ws?token=abc-123");
 });
 
 test("shows connected/slots count after joining", async () => {
@@ -220,6 +226,37 @@ test("shows 'Copied!' after clicking copy button", async () => {
   await userEvent.click(copyButton);
 
   expect(await screen.findByText("Copied!")).toBeDefined();
+});
+
+test("resets 'Copied!' back to 'Copy link' after timeout", async () => {
+  vi.useFakeTimers({ shouldAdvanceTime: true });
+  const writeText = vi.fn().mockResolvedValue(undefined);
+  Object.assign(navigator, { clipboard: { writeText } });
+
+  renderWithRouter();
+  await waitFor(() => expect(mockSocket).toBeDefined());
+
+  simulateMessage({
+    type: "joined",
+    clientId: "c1",
+    role: "moderator",
+    slots: 3,
+    connected: 1,
+    players: ["Brave Otter"],
+  });
+
+  const copyButton = await screen.findByText("Copy link");
+  await userEvent.click(copyButton);
+
+  expect(await screen.findByText("Copied!")).toBeDefined();
+
+  act(() => {
+    vi.advanceTimersByTime(2000);
+  });
+
+  expect(await screen.findByText("Copy link")).toBeDefined();
+
+  vi.useRealTimers();
 });
 
 test("renders slot indicators matching the slot count", async () => {

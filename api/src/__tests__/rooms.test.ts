@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { WebSocket } from "ws";
 import {
   addClient,
+  broadcastToRoom,
   clearRooms,
   createRoom,
   getRoom,
@@ -98,5 +99,58 @@ describe("removeClient", () => {
     addClient(room, "client-1", fakeClient);
     removeClient(room, "client-1");
     expect(room.clients.size).toBe(0);
+  });
+});
+
+describe("broadcastToRoom", () => {
+  it("sends message to the moderator", () => {
+    const room = createRoom(2);
+    const send = vi.fn();
+    room.moderator = {
+      id: "mod-1",
+      socket: { readyState: 1, send } as unknown as WebSocket,
+    };
+
+    broadcastToRoom(room, "hello");
+
+    expect(send).toHaveBeenCalledWith("hello");
+  });
+
+  it("skips clients with closed sockets", () => {
+    const room = createRoom(2);
+    const sendOpen = vi.fn();
+    const sendClosed = vi.fn();
+    addClient(room, "c1", {
+      socket: { readyState: 1, send: sendOpen } as unknown as WebSocket,
+      username: "A",
+    });
+    addClient(room, "c2", {
+      socket: { readyState: 3, send: sendClosed } as unknown as WebSocket,
+      username: "B",
+    });
+
+    broadcastToRoom(room, "hello");
+
+    expect(sendOpen).toHaveBeenCalledWith("hello");
+    expect(sendClosed).not.toHaveBeenCalled();
+  });
+
+  it("sends message to all clients", () => {
+    const room = createRoom(2);
+    const send1 = vi.fn();
+    const send2 = vi.fn();
+    addClient(room, "c1", {
+      socket: { readyState: 1, send: send1 } as unknown as WebSocket,
+      username: "A",
+    });
+    addClient(room, "c2", {
+      socket: { readyState: 1, send: send2 } as unknown as WebSocket,
+      username: "B",
+    });
+
+    broadcastToRoom(room, "hello");
+
+    expect(send1).toHaveBeenCalledWith("hello");
+    expect(send2).toHaveBeenCalledWith("hello");
   });
 });
