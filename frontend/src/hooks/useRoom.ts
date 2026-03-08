@@ -5,19 +5,23 @@ type RoomStatus = {
   connected: number;
 };
 
+type Role = "moderator" | "player";
+
 type RoomState = {
   status: RoomStatus | null;
   error: string | null;
   locked: boolean;
+  role: Role | null;
 };
 
 const initialState: RoomState = {
   status: null,
   error: null,
   locked: false,
+  role: null,
 };
 
-export function useRoom(roomId: string | undefined) {
+export function useRoom(roomId: string | undefined, token?: string) {
   const [state, setState] = useState<RoomState>(initialState);
   const wsRef = useRef<WebSocket | null>(null);
 
@@ -26,7 +30,8 @@ export function useRoom(roomId: string | undefined) {
 
     setState(initialState);
 
-    const ws = new WebSocket(`ws://${window.location.host}/rooms/${roomId}/ws`);
+    const params = token ? `?token=${token}` : "";
+    const ws = new WebSocket(`ws://${window.location.host}/rooms/${roomId}/ws${params}`);
     wsRef.current = ws;
 
     ws.onmessage = (event) => {
@@ -37,7 +42,15 @@ export function useRoom(roomId: string | undefined) {
         return;
       }
 
-      if (message.type === "joined" || message.type === "status") {
+      if (message.type === "joined") {
+        setState((prev) => ({
+          ...prev,
+          role: message.role,
+          status: { slots: message.slots, connected: message.connected },
+        }));
+      }
+
+      if (message.type === "status") {
         setState((prev) => ({
           ...prev,
           status: { slots: message.slots, connected: message.connected },
@@ -62,7 +75,7 @@ export function useRoom(roomId: string | undefined) {
       ws.close();
       wsRef.current = null;
     };
-  }, [roomId]);
+  }, [roomId, token]);
 
   const copyShareableUrl = useCallback(() => {
     if (!roomId) return Promise.resolve();

@@ -77,6 +77,11 @@ npm run frontend:check && npm run api:check
 
 Both must pass before creating a commit.
 
+## Domain Concepts
+
+- **Moderator**: The person who creates a room. They do not occupy a slot and do not participate in the game. They observe the room and manage it. Identified by the `token` returned when the room is created.
+- **Player**: A person who joins a room by clicking on the shareable link. Players occupy slots. A room with N slots can hold N players (the moderator is excluded from this count).
+
 ## Design Principles
 
 - Styles belong in `components/`, pages should compose components rather than define raw styles.

@@ -17,6 +17,10 @@ const wsParamsSchema = z.object({
   id: z.string(),
 });
 
+const wsQuerySchema = z.object({
+  token: z.string().optional(),
+});
+
 export async function registerRoutes(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().post(
     "/rooms",
@@ -29,7 +33,7 @@ export async function registerRoutes(app: FastifyInstance) {
     async (request, reply) => {
       const { slots } = request.body;
       const room = createRoom(slots);
-      return reply.status(201).send({ id: room.id, slots: room.slots });
+      return reply.status(201).send({ id: room.id, slots: room.slots, token: room.token });
     },
   );
 
@@ -37,7 +41,7 @@ export async function registerRoutes(app: FastifyInstance) {
     .withTypeProvider<ZodTypeProvider>()
     .get(
       "/rooms/:id/ws",
-      { websocket: true, schema: { params: wsParamsSchema } },
+      { websocket: true, schema: { params: wsParamsSchema, querystring: wsQuerySchema } },
       (socket, request) => {
         const room = getRoom(request.params.id);
 
@@ -54,6 +58,30 @@ export async function registerRoutes(app: FastifyInstance) {
         }
 
         const clientId = randomUUID();
+        const isModerator = request.query.token === room.token;
+
+        if (isModerator) {
+          room.moderator = { id: clientId, socket };
+
+          socket.send(
+            JSON.stringify({
+              type: "joined",
+              clientId,
+              role: "moderator",
+              slots: room.slots,
+              connected: room.clients.size,
+            }),
+          );
+
+          socket.on("close", () => {
+            if (room.moderator?.id === clientId) {
+              room.moderator = null;
+            }
+          });
+
+          return;
+        }
+
         const joined = addClient(room, clientId, socket);
 
         if (!joined) {
@@ -66,6 +94,7 @@ export async function registerRoutes(app: FastifyInstance) {
           JSON.stringify({
             type: "joined",
             clientId,
+            role: "player",
             slots: room.slots,
             connected: room.clients.size,
           }),

@@ -28,7 +28,7 @@ export function Home() {
   const mutation = useMutation({
     mutationFn: createRoom,
     onSuccess: (data) => {
-      navigate({ to: "/room/$roomId", params: { roomId: data.id } });
+      navigate({ to: "/room/$roomId", params: { roomId: data.id }, search: { token: data.token } });
     },
   });
 

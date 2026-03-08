@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams } from "@tanstack/react-router";
+import { useParams, useSearch } from "@tanstack/react-router";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { PageShell } from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/Button";
@@ -9,7 +9,8 @@ import { useRoom } from "@/hooks/useRoom";
 
 export function Room() {
   const { roomId } = useParams({ strict: false });
-  const { status, error, locked, copyShareableUrl } = useRoom(roomId);
+  const { token } = useSearch({ strict: false });
+  const { status, error, locked, copyShareableUrl } = useRoom(roomId, token);
   const [copied, setCopied] = useState(false);
 
   const shareableUrl = `${window.location.origin}/room/${roomId}`;

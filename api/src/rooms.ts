@@ -4,7 +4,9 @@ import type { WebSocket } from "ws";
 export type Room = {
   id: string;
   slots: number;
+  token: string;
   clients: Map<string, WebSocket>;
+  moderator: { id: string; socket: WebSocket } | null;
   locked: boolean;
   createdAt: number;
 };
@@ -13,7 +15,16 @@ const rooms = new Map<string, Room>();
 
 export function createRoom(slots: number): Room {
   const id = randomUUID();
-  const room: Room = { id, slots, clients: new Map(), locked: false, createdAt: Date.now() };
+  const token = randomUUID();
+  const room: Room = {
+    id,
+    slots,
+    token,
+    clients: new Map(),
+    moderator: null,
+    locked: false,
+    createdAt: Date.now(),
+  };
   rooms.set(id, room);
   return room;
 }
@@ -41,6 +52,9 @@ export function removeClient(room: Room, clientId: string): void {
 }
 
 export function broadcastToRoom(room: Room, message: string): void {
+  if (room.moderator?.socket.readyState === 1) {
+    room.moderator.socket.send(message);
+  }
   for (const socket of room.clients.values()) {
     if (socket.readyState === 1) {
       socket.send(message);

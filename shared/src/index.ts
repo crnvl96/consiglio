@@ -7,6 +7,7 @@ export const createRoomBodySchema = z.object({
 export const createRoomResponseSchema = z.object({
   id: z.string().uuid({ version: "v4" }),
   slots: z.number().int(),
+  token: z.string().uuid({ version: "v4" }),
 });
 
 export type CreateRoomBody = z.infer<typeof createRoomBodySchema>;
