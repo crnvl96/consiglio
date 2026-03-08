@@ -40,7 +40,7 @@ test("starts with initial state", () => {
 
 test("connect opens a WebSocket to the room", () => {
   useRoomStore.getState().connect("room-123");
-  expect(mockSocket.url).toBe("ws://localhost:3000/rooms/room-123/ws");
+  expect(mockSocket.url).toContain("/rooms/room-123/ws");
 });
 
 test("sets status on joined message", () => {

@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { PageShell } from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { SlotRing } from "@/components/ui/SlotRing";
 import { useRoomStore } from "@/stores/roomStore";
 
 export function Room() {
@@ -43,14 +44,15 @@ export function Room() {
       <div className="w-full max-w-sm space-y-8 text-center">
         <PageHeader title="Room" subtitle={subtitle} />
         {status && (
-          <Card>
-            <p className="text-fg-muted">
-              <span className="text-fg text-lg font-bold">{status.connected}</span>
+          <>
+            <SlotRing slots={status.slots} connected={status.connected} />
+            <p className="text-fg-muted text-sm">
+              <span className="text-fg font-bold">{status.connected}</span>
               {" / "}
               <span>{status.slots}</span>
               {" players connected"}
             </p>
-          </Card>
+          </>
         )}
         {status && !locked && (
           <Card>

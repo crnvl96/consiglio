@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-const WS_BASE = "ws://localhost:3000";
+const WS_BASE = `ws://${window.location.host}`;
 
 type RoomStatus = {
   slots: number;
