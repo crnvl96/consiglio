@@ -8,10 +8,8 @@ import { Card } from "@/components/ui/Card";
 import { Label } from "@/components/ui/Label";
 import { NumberStepper } from "@/components/ui/NumberStepper";
 
-const API_BASE = "http://localhost:3000";
-
 async function createRoom(slots: number): Promise<CreateRoomResponse> {
-  const response = await fetch(`${API_BASE}/rooms`, {
+  const response = await fetch("/rooms", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ slots }),

@@ -55,7 +55,7 @@ function simulateMessage(message: Record<string, unknown>) {
 test("connects to the WebSocket with the room ID", async () => {
   renderWithRouter("my-room-123");
   await waitFor(() => expect(mockSocket).toBeDefined());
-  expect(mockSocket.url).toBe("ws://localhost:3000/rooms/my-room-123/ws");
+  expect(mockSocket.url).toContain("/rooms/my-room-123/ws");
 });
 
 test("shows connected/slots count after joining", async () => {
@@ -64,9 +64,8 @@ test("shows connected/slots count after joining", async () => {
 
   simulateMessage({ type: "joined", clientId: "c1", slots: 5, connected: 1 });
 
-  expect(await screen.findByText("1")).toBeDefined();
-  expect(screen.getByText("5")).toBeDefined();
-  expect(screen.getByText(/players connected/)).toBeDefined();
+  const counter = await screen.findByText(/players connected/);
+  expect(counter.textContent).toBe("1 / 5 players connected");
 });
 
 test("updates count on status messages", async () => {
@@ -76,7 +75,8 @@ test("updates count on status messages", async () => {
   simulateMessage({ type: "joined", clientId: "c1", slots: 3, connected: 1 });
   simulateMessage({ type: "status", slots: 3, connected: 2 });
 
-  expect(await screen.findByText("2")).toBeDefined();
+  const counter = await screen.findByText(/players connected/);
+  expect(counter.textContent).toBe("2 / 3 players connected");
 });
 
 test("shows error when room is not found", async () => {
@@ -172,6 +172,31 @@ test("hides shareable link when room is locked", async () => {
   await waitFor(() => {
     expect(screen.queryByLabelText("Shareable link")).toBeNull();
     expect(screen.queryByText("Copy link")).toBeNull();
+  });
+});
+
+test("renders slot indicators matching the slot count", async () => {
+  renderWithRouter();
+  await waitFor(() => expect(mockSocket).toBeDefined());
+
+  simulateMessage({ type: "joined", clientId: "c1", slots: 4, connected: 1 });
+
+  await waitFor(() => {
+    const indicators = screen.getAllByRole("listitem");
+    expect(indicators).toHaveLength(4);
+  });
+});
+
+test("slot indicators reflect connected count", async () => {
+  renderWithRouter();
+  await waitFor(() => expect(mockSocket).toBeDefined());
+
+  simulateMessage({ type: "joined", clientId: "c1", slots: 3, connected: 2 });
+
+  await waitFor(() => {
+    const indicators = screen.getAllByRole("listitem");
+    const active = indicators.filter((el) => el.dataset.active === "true");
+    expect(active).toHaveLength(2);
   });
 });
 

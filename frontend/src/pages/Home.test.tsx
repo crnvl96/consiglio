@@ -97,7 +97,7 @@ test("calls POST /rooms and navigates to /room/:id on success", async () => {
   });
 
   expect(globalThis.fetch).toHaveBeenCalledWith(
-    "http://localhost:3000/rooms",
+    "/rooms",
     expect.objectContaining({
       method: "POST",
       body: JSON.stringify({ slots: 1 }),
