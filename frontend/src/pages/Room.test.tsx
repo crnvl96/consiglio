@@ -8,6 +8,7 @@ import {
   RouterProvider,
 } from "@tanstack/react-router";
 import { afterEach, expect, test, vi } from "vitest";
+import { useRoomStore } from "@/stores/roomStore";
 import { Room } from "./Room";
 
 class MockSocket {
@@ -29,6 +30,7 @@ let mockSocket: MockSocket;
 vi.stubGlobal("WebSocket", MockSocket);
 
 afterEach(() => {
+  useRoomStore.getState().reset();
   vi.clearAllMocks();
 });
 

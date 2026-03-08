@@ -4,52 +4,20 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { PageShell } from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-
-const WS_BASE = "ws://localhost:3000";
-
-type RoomStatus = {
-  slots: number;
-  connected: number;
-};
+import { useRoomStore } from "@/stores/roomStore";
 
 export function Room() {
   const { roomId } = useParams({ strict: false });
-  const [status, setStatus] = useState<RoomStatus | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [locked, setLocked] = useState(false);
+  const { status, error, locked, connect, reset } = useRoomStore();
   const [copied, setCopied] = useState(false);
 
   const shareableUrl = `${window.location.origin}/room/${roomId}`;
 
   useEffect(() => {
     if (!roomId) return;
-    const ws = new WebSocket(`${WS_BASE}/rooms/${roomId}/ws`);
-
-    ws.onmessage = (event) => {
-      const message = JSON.parse(event.data);
-
-      if (message.type === "error") {
-        setError(message.message);
-        return;
-      }
-
-      if (message.type === "joined" || message.type === "status") {
-        setStatus({ slots: message.slots, connected: message.connected });
-      }
-
-      if (message.type === "locked") {
-        setLocked(true);
-      }
-    };
-
-    ws.onclose = () => {
-      setError((prev) => prev ?? "Disconnected from room");
-    };
-
-    return () => {
-      ws.close();
-    };
-  }, [roomId]);
+    connect(roomId);
+    return () => reset();
+  }, [roomId, connect, reset]);
 
   function handleCopy() {
     navigator.clipboard.writeText(shareableUrl).then(() => {
